@@ -6,93 +6,98 @@
 
 using namespace std;
 
-struct arr {
-    int n;
+struct arr
+{
+    int l,r;
     int *arr;
 };
 
-void *mergeSorter(void *args) {
+void *mergeSorter(void *args)
+{
     struct arr *myArr;
     myArr = (struct arr *) args;
-    int n = myArr->n;
-    if (n <=1) {
+    int l = myArr->l;
+    int r = myArr->r;
+    if(r-l<1)
         pthread_exit(NULL);
-    }
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    int mid = n / 2;
-    int resultarr [n];
-    *resultarr=*myArr->arr;
+    int mid = (l+r)/2;
 
     arr leftarr, rightarr;
-    leftarr.arr = &resultarr[0];
-    leftarr.n = n - mid;
-    rightarr.arr = &resultarr[n-mid];
-    rightarr.n = mid;
+    leftarr.arr = myArr.arr;
+    leftarr.l =l;
+    leftarr.r=mid;
+
+    rightarr.arr = myArr.arr;
+    rightarr.l = mid+1;
+    rightarr.r=r;
     pthread_t lThread, rThread;
     int lt = pthread_create(&lThread, &attr, mergeSorter, (void *) &leftarr);
     int rt = pthread_create(&rThread, &attr, mergeSorter, (void *) &rightarr);
-    if (lt != 0 || rt != 0) {
-        cout << "error creating thread";
-    }
+    if (lt != 0 || rt != 0) cout << "error creating thread";
 
     pthread_attr_destroy(&attr);
     void *status;
     lt = pthread_join(lThread, &status);
     rt = pthread_join(rThread, &status);
-    if (lt != 0 || rt != 0) {
-        cout << "error joining threads";
-    }
-    cout<<endl;
-    cout<<"before merge:"<<endl;
-    for(int i=0;i<n-mid;i++){
-        cout<<"a"<<leftarr.arr[i]<<" ";
+    if (lt != 0 || rt != 0)cout << "error joining threads";
 
+    int leftSize=mid-l+1;
+    int rightSize=r-mid;
+    int left[leftSize];
+    int right[rightSize];
+
+    for(int i=0; i<leftSize; i++)
+    {
+        left[i]=myArr.arr[i+l];
     }
-    cout<<endl;
-    for(int i=0;i<mid;i++){
-        cout<<rightarr.arr[i]<<" ";
+    for(int i=0; i<rightSize; i++)
+    {
+        right[i]=myArr.arr[i+mid+1];
     }
-    cout<<endl;
-    cout<<"after merge: ";
     int i=0,j=0;
-    while(i+j<n){
-        if(i>=n-mid){
-            resultarr[i+j]=rightarr.arr[j];
+   while(i+j<leftSize+rightSize)
+    {
+        if(i>=leftSize)
+        {
+            myArr.arr[l+i+j]=right[j];
             j++;
-        }else if(j>=mid){
-            resultarr[i+j]=leftarr.arr[i];
+        }
+        else if(j>=rightSize)
+        {
+            myArr.arr[l+i+j]=left[i];
             i++;
-        }else{
-            if(leftarr.arr[i]<rightarr.arr[j]){
-                resultarr[i+j]=leftarr.arr[i];
-                i++;
-            }else{
-                resultarr[i+j]=rightarr.arr[j];
-                j++;
-            }
+        }
+        else if(left[i]<right[j])
+        {
+            myArr.arr[l+i+j]=left[i];
+            i++;
+        }
+        else
+        {
+            myArr.arr[l+i+j]=right[j];
+            j++;
+
         }
 
-
+    }
 
     }
-    for(int i=0;i<n;i++){
-        cout<<resultarr[i]<<" ";
-    }
-    cout<<endl;
     myArr->arr=resultarr;
     pthread_exit(NULL);
 
 }
 
-int main() {
+int main()
+{
     int n;
     cin >> n;
     int arr[n];
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         cin >> arr[i];
     }
     pthread_attr_t attr;
@@ -102,20 +107,24 @@ int main() {
 
     struct arr mainArr;
     mainArr.arr=arr;
-    mainArr.n=n;
+    mainArr.l=0;
+    mainArr.r=n-1;
 
 
     int th = pthread_create(&thread, &attr, mergeSorter, (void *) &mainArr);
-    if(th){
+    if(th)
+    {
         cout<<"Unable to create main thread";
     }
     //pthread_attr_destroy(attr);
     void *status;
     th = pthread_join(thread, NULL);
-    if(th){
+    if(th)
+    {
         cout<<"Unable to join main thread";
     }
-    for(int i=0;i<n;i++){
+    for(int i=0; i<n; i++)
+    {
         cout<<mainArr.arr[i]<<" ";
     }
     pthread_exit(NULL);
